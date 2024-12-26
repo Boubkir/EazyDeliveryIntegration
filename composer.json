@@ -1,0 +1,27 @@
+{
+    "name": "eazydelivery/integration",
+    "description": "EazyDelivery Integration for Shopware",
+    "type": "shopware-platform-plugin",
+    "version": "1.0.0",
+    "license": "MIT",
+    "require": {
+        "shopware/core": "~6.6.9"
+    },
+    "extra": {
+        "shopware-plugin-class": "EazyDeliveryIntegration\\EazyDeliveryIntegration",
+        "label": {
+            "de-DE": "EazyDelivery Integration",
+            "en-GB": "EazyDelivery Integration"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "EazyDeliveryIntegration\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "EazyDeliveryIntegration\\Tests\\": "tests/"
+        }
+    }
+}
