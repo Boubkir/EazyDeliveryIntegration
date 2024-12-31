@@ -1,7 +1,5 @@
-// Import all necessary Storefront plugins
-import ExamplePlugin from './example-plugin/example-plugin.plugin';
+import OrderCustomizationPlugin from "./order-customization/order-customization.plugin";
 
-// Register your plugin via the existing PluginManager
 const PluginManager = window.PluginManager;
 
-PluginManager.register('ExamplePlugin', ExamplePlugin, '[data-example-plugin]');
+PluginManager.register('OrderCustomization', OrderCustomizationPlugin, '[data-order-customization]');

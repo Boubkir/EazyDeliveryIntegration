@@ -19,22 +19,33 @@
         </service>
 
         <service id="EazyDeliveryIntegration\Storefront\Controller\OrderCustomizationController" public="true">
+            <!-- Repository als Argument injizieren -->
+            <argument type="service" id="EazyDeliveryIntegration\Service\OrderCustomizationDataService" />
+            <argument type="service" id="logger" />
+
+            <!-- Optional: SetContainer-Methode für Symfony-Container -->
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
+            <!-- Twig injizieren, falls notwendig -->
             <call method="setTwig">
-                 <argument type="service" id="twig"/>
-             </call>
+                <argument type="service" id="twig"/>
+            </call>
+            <!-- Tag hinzufügen, um den Controller zu registrieren -->
+            <tag name="controller.service_arguments"/>
         </service>
+
+        <service id="EazyDeliveryIntegration\Service\OrderCustomizationDataService" public="true">
+            <argument type="service" id="sales_channel.product.repository" />
+            <argument type="service" id="logger" />
+
+        </service>
+
 
         <service id="EazyDeliveryIntegration\Core\Content\Example\SalesChannel\ExampleRoute">
             <argument type="service" id="product.repository"/>
         </service>
 
-        <service id="EazyDeliveryIntegration\Service\CustomFieldsInstaller">
-            <argument type="service" id="custom_field_set.repository"/>
-            <argument type="service" id="custom_field_set_relation.repository"/>
-        </service>
 
     </services>
 </container>
