@@ -9,7 +9,6 @@ export default class OrderCustomizationPlugin extends Plugin {
         const totalPriceButton = this.el.querySelector('#totalPriceButton');
         const sizeInputs = this.el.querySelectorAll('input[name="pizzaSize"]');
         const toppingContainer = this.el.querySelector('.toppings-container');
-        const toppingInputs = this.el.querySelectorAll('input[name="toppings[]"]');
         const drinkInputs = this.el.querySelectorAll('input[name="drink"]');
 
         // Funktion zur Aktualisierung der Toppings basierend auf der ausgewählten Option-ID
@@ -38,11 +37,10 @@ export default class OrderCustomizationPlugin extends Plugin {
                                 </label>
                             `;
                             toppingContainer.appendChild(toppingElement);
-
-                            // Event-Listener für neues Topping
-                            toppingElement.querySelector('input').addEventListener('change', recalculatePrices);
                         });
                     }
+
+                    console.debug('[OrderCustomizationPlugin] Rendered toppings:', toppingContainer.innerHTML);
                 })
                 .catch(error => console.error('Error fetching toppings:', error));
         };
@@ -57,7 +55,7 @@ export default class OrderCustomizationPlugin extends Plugin {
             const selectedDrink = this.el.querySelector('input[name="drink"]:checked')?.value;
 
             if (!selectedProductId) {
-                console.error('No size selected!');
+                console.error('[OrderCustomizationPlugin] No size selected!');
                 return;
             }
 
@@ -96,6 +94,13 @@ export default class OrderCustomizationPlugin extends Plugin {
                 recalculatePrices(); // Aktualisiere Preise basierend auf der Produkt-ID
             }
         }));
+
+        // Event-Listener für Änderungen in Topping-Container (Event Delegation)
+        toppingContainer.addEventListener('change', (event) => {
+            if (event.target && event.target.matches('input[name="toppings[]"]')) {
+                recalculatePrices();
+            }
+        });
 
         // Event-Listener für Getränke
         drinkInputs.forEach(input => input.addEventListener('change', recalculatePrices));

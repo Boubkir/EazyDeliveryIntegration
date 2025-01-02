@@ -1,10 +1,14 @@
-<?xml version="1.0" ?>
-
+<?xml version="1.0" encoding="UTF-8"?>
 <container xmlns="http://symfony.com/schema/dic/services"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+           xsi:schemaLocation="http://symfony.com/schema/dic/services
+                               http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
+        <!--
+            Hier können deine anderen Services/Tags stehen,
+            beispielsweise die Commands, Subscriber etc.:
+        -->
 
         <service id="EazyDeliveryIntegration\Command\ExampleCommand">
             <tag name="console.command"/>
@@ -18,34 +22,81 @@
             <tag name="kernel.event_subscriber"/>
         </service>
 
+
         <service id="EazyDeliveryIntegration\Storefront\Controller\OrderCustomizationController" public="true">
-            <!-- Repository als Argument injizieren -->
-            <argument type="service" id="EazyDeliveryIntegration\Service\OrderCustomizationDataService" />
-            <argument type="service" id="logger" />
+            <argument type="service" id="EazyDeliveryIntegration\Service\VariantServiceInterface"/>
+            <argument type="service" id="EazyDeliveryIntegration\Service\ExtraServiceInterface"/>
+            <argument type="service" id="EazyDeliveryIntegration\Service\DrinkServiceInterface"/>
+            <argument type="service" id="EazyDeliveryIntegration\Service\PriceServiceInterface"/>
+            <argument type="service" id="logger"/>
 
             <!-- Optional: SetContainer-Methode für Symfony-Container -->
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
-            <!-- Twig injizieren, falls notwendig -->
+            <!-- Twig injizieren, falls notwendig (z. B. für renderStorefront) -->
             <call method="setTwig">
                 <argument type="service" id="twig"/>
             </call>
-            <!-- Tag hinzufügen, um den Controller zu registrieren -->
+
+            <!-- Tag, damit der Controller als Shopware-Controller erkannt wird -->
             <tag name="controller.service_arguments"/>
         </service>
 
-        <service id="EazyDeliveryIntegration\Service\OrderCustomizationDataService" public="true">
-            <argument type="service" id="sales_channel.product.repository" />
-            <argument type="service" id="logger" />
 
+        <!-- VariantService -->
+        <service id="EazyDeliveryIntegration\Service\VariantService" public="true">
+            <argument type="service" id="sales_channel.product.repository"/>
+            <argument type="service" id="logger"/>
+            <tag name="shopware.service"/>
         </service>
+        <service id="EazyDeliveryIntegration\Service\VariantServiceInterface"
+                 alias="EazyDeliveryIntegration\Service\VariantService"/>
 
 
+        <!-- ExtraService -->
+        <service id="EazyDeliveryIntegration\Service\ExtraService" public="true">
+            <argument type="service" id="sales_channel.product.repository"/>
+            <argument type="service" id="logger"/>
+            <tag name="shopware.service"/>
+        </service>
+        <service id="EazyDeliveryIntegration\Service\ExtraServiceInterface"
+                 alias="EazyDeliveryIntegration\Service\ExtraService"/>
+
+
+        <!-- DrinkService -->
+        <service id="EazyDeliveryIntegration\Service\DrinkService" public="true">
+            <argument type="service" id="sales_channel.product.repository"/>
+            <argument type="service" id="logger"/>
+            <tag name="shopware.service"/>
+        </service>
+        <service id="EazyDeliveryIntegration\Service\DrinkServiceInterface"
+                 alias="EazyDeliveryIntegration\Service\DrinkService"/>
+
+
+        <!-- PriceService -->
+        <service id="EazyDeliveryIntegration\Service\PriceService" public="true">
+            <argument type="service" id="sales_channel.product.repository"/>
+            <argument type="service" id="logger"/>
+            <tag name="shopware.service"/>
+        </service>
+        <service id="EazyDeliveryIntegration\Service\PriceServiceInterface"
+                 alias="EazyDeliveryIntegration\Service\PriceService"/>
+
+
+        <!-- Beispiel: Andere Routen/Services/Tasks, etc. -->
         <service id="EazyDeliveryIntegration\Core\Content\Example\SalesChannel\ExampleRoute">
             <argument type="service" id="product.repository"/>
         </service>
 
-
+        <service id="EazyDeliveryIntegration\Storefront\Controller\CartController" public="true">
+            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\LineItemFactoryRegistry"/>
+            <argument type="service" id="logger" />
+            <tag name="controller.service_arguments"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
     </services>
 </container>
