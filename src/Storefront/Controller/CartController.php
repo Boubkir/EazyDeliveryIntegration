@@ -3,10 +3,8 @@
 namespace EazyDeliveryIntegration\Storefront\Controller;
 
 use Psr\Log\LoggerInterface;
-use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\LineItemFactoryRegistry;
-use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
@@ -51,19 +49,14 @@ class CartController extends StorefrontController
         }
 
         $cart = $this->cartService->getCart($context->getToken(), $context);
-        $this->logger->debug('[CartController] Current cart fetched.');
 
         try {
             foreach ($items as $item) {
                 $lineItem = $this->createLineItem($item, $context);
-
-                $this->logger->debug('[CartController] Adding line item to cart: ' . json_encode($item));
                 $this->cartService->add($cart, $lineItem, $context);
-                $this->logger->info('[CartController] Successfully added item with ID: ' . $item['id']);
             }
 
             $this->cartService->recalculate($cart, $context);
-            $this->logger->debug('[CartController] Cart recalculated.');
 
             return new JsonResponse(['success' => true]);
         } catch (\Exception $e) {
@@ -74,50 +67,57 @@ class CartController extends StorefrontController
 
     private function createLineItem(array $itemData, SalesChannelContext $context): LineItem
     {
-        $this->logger->debug('[CartController] Creating LineItem for product ID: ' . ($itemData['id'] ?? 'N/A'));
+        $parentLineItem = new LineItem(
+            $itemData['id'],
+            LineItem::PRODUCT_LINE_ITEM_TYPE,
+            $itemData['id'],
+            $itemData['quantity'] ?? 1
+        );
 
-        $lineItem = $this->lineItemFactoryRegistry->create([
-            'type' => 'product',
-            'referencedId' => $itemData['id'],
-            'quantity' => $itemData['quantity'] ?? 1,
-        ], $context);
+        $parentLineItem->setRemovable(true);
+        $parentLineItem->setStackable(true);
 
-        $lineItem->setRemovable(true);
-        $lineItem->setStackable(true);
-
-        $totalChildPrice = 0.0;
+        $totalChildPrice = 0;
 
         if (!empty($itemData['children'])) {
             foreach ($itemData['children'] as $child) {
-                $this->logger->debug('[CartController] Creating child LineItem for ID: ' . $child['id']);
-
-                $childLineItem = $this->lineItemFactoryRegistry->create([
-                    'type' => 'product',
-                    'referencedId' => $child['id'],
-                    'quantity' => $child['quantity'] ?? 1,
-                ], $context);
+                $childLineItem = new LineItem(
+                    $child['id'],
+                    LineItem::PRODUCT_LINE_ITEM_TYPE,
+                    $child['id'],
+                    $child['quantity'] ?? 1
+                );
 
                 $childLineItem->setRemovable(true);
                 $childLineItem->setStackable(true);
 
-                $childPrice = $childLineItem->getPrice() ? $childLineItem->getPrice()->getTotalPrice() : 0;
-                $totalChildPrice += $childPrice;
+                // Preis des Child-Items (z. B. aus einer Datenbank oder API abrufen)
+                $childPrice = $child['price'] ?? 0; // Preis aus den übergebenen Daten
+                $totalChildPrice += $childPrice * ($child['quantity'] ?? 1);
 
-                $lineItem->addChild($childLineItem);
-                $this->logger->debug('[CartController] Added child LineItem with ID: ' . $childLineItem->getId() . ' to parent LineItem: ' . $lineItem->getId());
+                $childLineItem->setPrice(new \Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice(
+                    $childPrice,
+                    $childPrice * ($child['quantity'] ?? 1),
+                    new \Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection(),
+                    new \Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection()
+                ));
+
+                $parentLineItem->addChild($childLineItem);
             }
         }
 
-        $parentPrice = $lineItem->getPrice() ? $lineItem->getPrice()->getTotalPrice() : 0;
-        $lineItem->setPrice(new CalculatedPrice(
-            $parentPrice + $totalChildPrice,
-            $parentPrice + $totalChildPrice,
-            $lineItem->getPrice()->getCalculatedTaxes(),
-            $lineItem->getPrice()->getTaxRules()
+        // Parent-Preis berechnen
+        $parentPrice = $itemData['price'] ?? 0; // Preis des Parents aus den übergebenen Daten
+        $parentTotalPrice = $parentPrice + $totalChildPrice;
+
+        $parentLineItem->setPrice(new \Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice(
+            $parentPrice,
+            $parentTotalPrice,
+            new \Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection(),
+            new \Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection()
         ));
 
-        $this->logger->debug('[CartController] Final parent LineItem price: ' . ($parentPrice + $totalChildPrice));
-
-        return $lineItem;
+        return $parentLineItem;
     }
+
 }
